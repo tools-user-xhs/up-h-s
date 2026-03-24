@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>📊 外贸价格大师 · 手动汇率 | 严谨术语依赖</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body {
+            background: linear-gradient(145deg, #eef4fa 0%, #dbe9f2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+        .calculator-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(12px);
+            border-radius: 2.8rem;
+            box-shadow: 0 30px 55px -15px rgba(0, 40, 70, 0.35);
+            padding: 2rem 2rem;
+            border: 1px solid rgba(255,255,255,0.7);
+        }
+        h1 {
+            font-weight: 700;
+            font-size: 1.9rem;
+            letter-spacing: -0.02em;
+            color: #0a334c;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+        h1 i { color: #1e6f9f; font-size: 2rem; }
+        .rate-bar {
+            background: white;
+            border-radius: 2rem;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0 1.8rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            border: 1px solid rgba(46, 134, 193, 0.5);
+            box-shadow: 0 8px 18px -10px #1e6f9f;
+        }
+        .manual-rate-area {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: #fef7e0;
+            padding: 0.4rem 1.2rem;
+            border-radius: 3rem;
+            border-left: 3px solid #f4b942;
+            flex-wrap: wrap;
+        }
+        .manual-rate-area label { font-weight: 700; color: #a8681c; font-size: 0.95rem; }
+        .manual-rate-area input {
+            width: 130px;
+            border: 1px solid #f3cd81;
+            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            background: #fffaf0;
+            text-align: center;
+            font-size: 1rem;
+        }
+        .effective-rate-badge {
+            font-size: 0.85rem;
+            background: #e0f0e5;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .input-card {
+            background: white;
+            border-radius: 1.6rem;
+            padding: 1rem 1.2rem;
+            box-shadow: 0 6px 14px -8px rgba(0,45,70,0.1);
+            border: 1px solid rgba(111, 177, 218, 0.4);
+        }
+        .input-card label { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #1a4a6a; margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .input-card input {
+            width: 100%;
+            border: 1px solid #cde1f0;
+            border-radius: 2.5rem;
+            padding: 0.65rem 1.2rem;
+            font-size: 0.95rem;
+            background: #fbfeff;
+            outline: none;
+        }
+        .input-card input:focus { border-color: #1e6f9f; box-shadow: 0 0 0 3px rgba(30,111,159,0.2); }
+        .unit-hint { font-size: 0.68rem; color: #5f82a0; margin-top: 0.25rem; margin-left: 0.3rem; }
+        .button-group { display: flex; justify-content: center; gap: 1.2rem; margin: 0 0 2rem 0; flex-wrap: wrap; }
+        .query-btn, .clear-btn { font-weight: 700; padding: 0.8rem 2rem; border-radius: 3rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.6rem; border: none; font-size: 1rem; }
+        .query-btn { background: linear-gradient(105deg, #0f4668, #1b6a98); color: white; box-shadow: 0 12px 20px -12px #0f4668; }
+        .query-btn:hover { transform: translateY(-2px); background: linear-gradient(105deg, #0a3853, #135e87); }
+        .clear-btn { background: white; color: #1f4b6e; border: 1px solid #b7d2e8; }
+        .clear-btn:hover { background: #eef5fc; transform: translateY(-1px); }
+        .results-grid { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; justify-content: center; }
+        .result-card {
+            background: white; border-radius: 1.6rem; padding: 0.9rem 1rem; box-shadow: 0 10px 20px -12px rgba(0,50,80,0.2);
+            border-left: 6px solid; flex: 1 1 230px; max-width: 270px;
+        }
+        .result-card.fob { border-left-color: #0d6b8c; }
+        .result-card.cfr { border-left-color: #1f8a6b; }
+        .result-card.cif { border-left-color: #b4693c; }
+        .result-card.exw { border-left-color: #6c757d; }
+        .result-card.fca { border-left-color: #4f7e9e; }
+        .result-card.cpt { border-left-color: #3f8f7a; }
+        .result-card.cip { border-left-color: #c97f3a; }
+        .result-card.dap { border-left-color: #b3506b; }
+        .result-card.dpu { border-left-color: #a04b8c; }
+        .result-card.ddp { border-left-color: #b13e3e; }
+        .result-card.fas { border-left-color: #9c7b4b; }
+        .term { font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 0.3rem; }
+        .term-chinese { font-size: 0.68rem; color: #4f6f8f; margin-bottom: 0.2rem; }
+        .usd-price { font-size: 1.7rem; font-weight: 800; color: #0d2d44; line-height: 1.2; }
+        .cny-price { font-size: 1.1rem; font-weight: 600; color: #2f5575; }
+        .price.na .usd-price, .price.na .cny-price { color: #a0b8cc; }
+        .calculation-breakdown { background: #f1f7fe; border-radius: 1rem; padding: 0.5rem; margin-top: 0.5rem; font-size: 0.7rem; color: #1d4b6e; border: 1px solid #d8e6f2; }
+        .history-panel { background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); border-radius: 1.8rem; padding: 1rem 1.5rem; margin-top: 0.8rem; border: 1px solid rgba(80, 140, 180, 0.5); }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; }
+        .history-header h3 { font-weight: 700; color: #19415f; font-size: 1.1rem; display: flex; gap: 0.4rem; }
+        .clear-history { background: transparent; border: 1px solid #b1cbdf; padding: 0.2rem 1rem; border-radius: 2rem; cursor: pointer; font-size: 0.75rem; }
+        .history-list { display: flex; flex-wrap: wrap; gap: 0.6rem; max-height: 130px; overflow-y: auto; }
+        .history-item { background: white; border-radius: 2rem; padding: 0.35rem 1rem; box-shadow: 0 1px 6px rgba(0,0,0,0.05); display: inline-flex; align-items: center; gap: 0.7rem; border-left: 4px solid #0d6b8c; cursor: pointer; font-size: 0.8rem; }
+        .error-message { background: #ffede5; border-radius: 1.5rem; padding: 0.6rem 1.2rem; color: #c13a2a; font-size: 0.8rem; border-left: 5px solid #c24a2c; margin-bottom: 1rem; display: none; align-items: center; gap: 0.6rem; }
+        .error-message.show { display: flex; }
+        footer { font-size: 0.68rem; color: #7f9ab5; text-align: center; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+<div class="calculator-container">
+    <h1><i class="fas fa-globe-americas"></i> 外贸价格大师 · 手动汇率模式</h1>
+    <!-- 汇率栏: 仅手动输入 -->
+    <div class="rate-bar">
+        <div class="manual-rate-area">
+            <label><i class="fas fa-dollar-sign"></i> USD/CNY 手动汇率</label>
+            <input type="number" id="manualRate" step="0.001" placeholder="例如 7.1500" value="7.1500">
+        </div>
+        <div class="effective-rate-badge" id="effectiveRateBadge">
+            <i class="fas fa-calculator"></i> 使用汇率: <span id="activeRateDisplay">7.1500</span>
+        </div>
+    </div>
+
+    <div id="errorBox" class="error-message"><i class="fas fa-exclamation-triangle"></i> <span id="errorText"></span></div>
+    
+    <div class="input-grid">
+        <div class="input-card"><label><i class="fas fa-tags"></i> 成本总价 (CNY)</label><input type="number" id="cost" step="500" min="0" placeholder="如 10000"><div class="unit-hint">所有术语必需</div></div>
+        <div class="input-card"><label><i class="fas fa-truck"></i> 国内总费用 (CNY)</label><input type="number" id="domestic" step="500" min="0" placeholder="如 1250"><div class="unit-hint">FOB/FAS/FCA等需要</div></div>
+        <div class="input-card"><label><i class="fas fa-ship"></i> 海运费总金额 (CNY)</label><input type="number" id="freight" step="100" min="0" placeholder="如 1500"><div class="unit-hint">CFR/CIF/CPT/CIP需要</div></div>
+        <div class="input-card"><label><i class="fas fa-flag-checkered"></i> 目的港总费用 (CNY)</label><input type="number" id="destination" step="100" min="0" placeholder="如 2500"><div class="unit-hint">DAP/DPU/DDP 部分需要</div></div>
+        <div class="input-card"><label><i class="fas fa-shield-alt"></i> 保险费率 (%)</label><input type="number" id="premium" step="0.1" min="0" max="20" placeholder="如 0.3"><div class="unit-hint">CIF / CIP 需要</div></div>
+        <div class="input-card"><label><i class="fas fa-percent"></i> 期望利润率 (%)</label><input type="number" id="profit" step="1" min="0" placeholder="如 10"><div class="unit-hint">所有术语必需</div></div>
+    </div>
+    <div class="button-group">
+        <button class="query-btn" id="queryBtn"><i class="fas fa-calculator"></i> 一键查询全部总价</button>
+        <button class="clear-btn" id="clearBtn"><i class="fas fa-eraser"></i> 一键清零</button>
+    </div>
+
+    <div class="results-grid" id="resultsGrid">
+        <div class="result-card fob"><div class="term"><i class="fas fa-ship"></i> FOB</div><div class="term-chinese">船上交货</div><div class="price" id="priceFOB"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descFOB">等待输入</div></div>
+        <div class="result-card cfr"><div class="term"><i class="fas fa-ship"></i> CFR</div><div class="term-chinese">成本加运费</div><div class="price" id="priceCFR"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descCFR">等待输入</div></div>
+        <div class="result-card cif"><div class="term"><i class="fas fa-umbrella-beach"></i> CIF</div><div class="term-chinese">成本+保险+运费</div><div class="price" id="priceCIF"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descCIF">等待输入</div></div>
+        <div class="result-card exw"><div class="term"><i class="fas fa-factory"></i> EXW</div><div class="term-chinese">工厂交货</div><div class="price" id="priceEXW"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descEXW">等待输入</div></div>
+        <div class="result-card fca"><div class="term"><i class="fas fa-truck-ramp-box"></i> FCA</div><div class="term-chinese">货交承运人</div><div class="price" id="priceFCA"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descFCA">等待输入</div></div>
+        <div class="result-card cpt"><div class="term"><i class="fas fa-train"></i> CPT</div><div class="term-chinese">运费付至</div><div class="price" id="priceCPT"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descCPT">等待输入</div></div>
+        <div class="result-card cip"><div class="term"><i class="fas fa-parachute-box"></i> CIP</div><div class="term-chinese">运费+保险费付至</div><div class="price" id="priceCIP"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descCIP">等待输入</div></div>
+        <div class="result-card dap"><div class="term"><i class="fas fa-location-dot"></i> DAP</div><div class="term-chinese">目的地交货</div><div class="price" id="priceDAP"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descDAP">等待输入</div></div>
+        <div class="result-card dpu"><div class="term"><i class="fas fa-dumpster"></i> DPU</div><div class="term-chinese">卸货地交货</div><div class="price" id="priceDPU"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descDPU">等待输入</div></div>
+        <div class="result-card ddp"><div class="term"><i class="fas fa-passport"></i> DDP</div><div class="term-chinese">完税后交货</div><div class="price" id="priceDDP"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descDDP">等待输入</div></div>
+        <div class="result-card fas"><div class="term"><i class="fas fa-anchor"></i> FAS</div><div class="term-chinese">船边交货</div><div class="price" id="priceFAS"><div class="usd-price">- <small>USD</small></div><div class="cny-price">- <small>CNY</small></div></div><div class="calculation-breakdown" id="descFAS">等待输入</div></div>
+    </div>
+
+    <div class="history-panel">
+        <div class="history-header"><h3><i class="fas fa-history"></i> 报价历史 (点击填充参数)</h3><button class="clear-history" id="clearHistoryBtn"><i class="far fa-trash-alt"></i> 清空历史</button></div>
+        <div class="history-list" id="historyList"><div style="color:#7f9eb5; text-align:center; width:100%;">暂无报价记录</div></div>
+    </div>
+    <footer><i class="fas fa-hand-point-right"></i> 所有价格基于手动输入汇率计算。未填写的参数视为缺失，对应术语不会显示价格。</footer>
+</div>
+
+<script>
+    (function() {
+        // DOM 元素
+        const manualRateInput = document.getElementById('manualRate');
+        const activeRateDisplaySpan = document.getElementById('activeRateDisplay');
+        const queryBtn = document.getElementById('queryBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const errorBox = document.getElementById('errorBox');
+        const errorTextSpan = document.getElementById('errorText');
+        const historyListDiv = document.getElementById('historyList');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+        
+        // 输入框
+        const costInp = document.getElementById('cost');
+        const domesticInp = document.getElementById('domestic');
+        const freightInp = document.getElementById('freight');
+        const destInp = document.getElementById('destination');
+        const premiumInp = document.getElementById('premium');
+        const profitInp = document.getElementById('profit');
+        
+        // 卡片映射
+        const priceElements = {
+            FOB: document.getElementById('priceFOB'), descFOB: document.getElementById('descFOB'),
+            CFR: document.getElementById('priceCFR'), descCFR: document.getElementById('descCFR'),
+            CIF: document.getElementById('priceCIF'), descCIF: document.getElementById('descCIF'),
+            EXW: document.getElementById('priceEXW'), descEXW: document.getElementById('descEXW'),
+            FCA: document.getElementById('priceFCA'), descFCA: document.getElementById('descFCA'),
+            CPT: document.getElementById('priceCPT'), descCPT: document.getElementById('descCPT'),
+            CIP: document.getElementById('priceCIP'), descCIP: document.getElementById('descCIP'),
+            DAP: document.getElementById('priceDAP'), descDAP: document.getElementById('descDAP'),
+            DPU: document.getElementById('priceDPU'), descDPU: document.getElementById('descDPU'),
+            DDP: document.getElementById('priceDDP'), descDDP: document.getElementById('descDDP'),
+            FAS: document.getElementById('priceFAS'), descFAS: document.getElementById('descFAS')
+        };
+        
+        let historyItems = [];
+        
+        function showError(msg) { errorTextSpan.innerText = msg; errorBox.classList.add('show'); }
+        function hideError() { errorBox.classList.remove('show'); }
+        
+        // 获取有效汇率（手动输入）
+        function getEffectiveRate() {
+            const val = parseFloat(manualRateInput.value);
+            if (!isNaN(val) && val > 0) {
+                return { rate: val, source: '手动输入' };
+            }
+            return null;
+        }
+        
+        // 更新汇率显示
+        function updateRateDisplay() {
+            const eff = getEffectiveRate();
+            if (eff) {
+                activeRateDisplaySpan.innerText = eff.rate.toFixed(4);
+            } else {
+                activeRateDisplaySpan.innerText = '无效汇率';
+            }
+        }
+        
+        // 重置所有卡片
+        function resetCards(message) {
+            const defaultMsg = message || (getEffectiveRate() ? '请输入参数后点击查询' : '⚠️ 请填写有效的USD/CNY汇率');
+            for (let key in priceElements) {
+                if (key.includes('desc')) continue;
+                const priceDiv = priceElements[key];
+                const descDiv = priceElements[`desc${key}`];
+                if (priceDiv) {
+                    const usdDiv = priceDiv.querySelector('.usd-price');
+                    const cnyDiv = priceDiv.querySelector('.cny-price');
+                    if (usdDiv) usdDiv.innerHTML = '- <small>USD</small>';
+                    if (cnyDiv) cnyDiv.innerHTML = '- <small>CNY</small>';
+                    priceDiv.classList.add('na');
+                }
+                if (descDiv) descDiv.innerHTML = `<i class="fas fa-info-circle"></i> ${defaultMsg}`;
+            }
+        }
+        
+        // 严格获取数值（空字符串视为NaN）
+        function getNumericInput(element) {
+            const val = element.value.trim();
+            if (val === '') return NaN;
+            const num = parseFloat(val);
+            return isNaN(num) ? NaN : num;
+        }
+        
+        // 核心计算：严格依赖参数
+        function computeAllWithRate(exchangeRate) {
+            if (!exchangeRate || exchangeRate <= 0) return null;
+            
+            const cost = getNumericInput(costInp);
+            const profit = getNumericInput(profitInp);
+            if (isNaN(cost) || cost < 0 || isNaN(profit) || profit < 0) return null;
+            
+            const profitFactor = 1 + profit / 100;
+            const domestic = getNumericInput(domesticInp);
+            const freight = getNumericInput(freightInp);
+            const dest = getNumericInput(destInp);
+            const premiumRaw = getNumericInput(premiumInp);
+            const premiumRate = !isNaN(premiumRaw) && premiumRaw >= 0 ? premiumRaw / 100 : NaN;
+            
+            // 基础价格
+            const exwCNY = cost * profitFactor;
+            const fasCNY = (!isNaN(domestic) && domestic >= 0) ? (cost + domestic * 0.85) * profitFactor : NaN;
+            const fobCNY = (!isNaN(domestic) && domestic >= 0) ? (cost + domestic) * profitFactor : NaN;
+            const fcaCNY = fobCNY;
+            
+            // CFR / CPT
+            const cfrCNY = (!isNaN(fobCNY) && !isNaN(freight) && freight >= 0) ? fobCNY + freight : NaN;
+            const cptCNY = (!isNaN(fcaCNY) && !isNaN(freight) && freight >= 0) ? fcaCNY + freight : NaN;
+            
+            // CIF / CIP
+            let cifCNY = NaN;
+            if (!isNaN(cfrCNY) && !isNaN(premiumRate) && premiumRate >= 0) {
+                if (premiumRate === 0) cifCNY = cfrCNY;
+                else {
+                    const denom = 1 - 1.1 * premiumRate;
+                    if (denom > 0) cifCNY = cfrCNY / denom;
+                }
+            }
+            let cipCNY = NaN;
+            if (!isNaN(cptCNY) && !isNaN(premiumRate) && premiumRate >= 0) {
+                if (premiumRate === 0) cipCNY = cptCNY;
+                else {
+                    const denom = 1 - 1.2 * premiumRate;
+                    if (denom > 0) cipCNY = cptCNY / denom;
+                }
+            }
+            
+            // DAP / DPU / DDP
+            const dapCNY = (!isNaN(cifCNY) && !isNaN(dest) && dest >= 0) ? cifCNY + dest * 0.3 : NaN;
+            const dpuCNY = (!isNaN(dapCNY)) ? dapCNY + 50 * exchangeRate : NaN;
+            const ddpCNY = (!isNaN(dapCNY) && !isNaN(dest) && dest >= 0) ? dapCNY + dest : NaN;
+            
+            const toUSD = (cny) => !isNaN(cny) ? cny / exchangeRate : NaN;
+            
+            // 描述文案
+            return {
+                exw: { usd: toUSD(exwCNY), cny: exwCNY, desc: `EXW总价 = 成本${cost} × (1+${profit}%) = ${exwCNY.toFixed(2)} CNY` },
+                fas: { usd: toUSD(fasCNY), cny: fasCNY, desc: !isNaN(fasCNY) ? `FAS总价 ≈ (成本${cost} + 国内${domestic}×0.85) × (1+${profit}%) = ${fasCNY.toFixed(2)} CNY` : null },
+                fob: { usd: toUSD(fobCNY), cny: fobCNY, desc: !isNaN(fobCNY) ? `FOB总价 = (成本${cost} + 国内${domestic}) × (1+${profit}%) = ${fobCNY.toFixed(2)} CNY` : null },
+                fca: { usd: toUSD(fcaCNY), cny: fcaCNY, desc: !isNaN(fcaCNY) ? `FCA总价 = 同FOB = ${fcaCNY.toFixed(2)} CNY` : null },
+                cfr: { usd: toUSD(cfrCNY), cny: cfrCNY, desc: !isNaN(cfrCNY) ? `CFR总价 = FOB CNY + 海运费${freight} = ${cfrCNY.toFixed(2)} CNY` : null },
+                cpt: { usd: toUSD(cptCNY), cny: cptCNY, desc: !isNaN(cptCNY) ? `CPT总价 = FCA CNY + 海运费${freight} = ${cptCNY.toFixed(2)} CNY` : null },
+                cif: { usd: toUSD(cifCNY), cny: cifCNY, desc: !isNaN(cifCNY) ? `CIF总价 = ${premiumRate === 0 ? 'CFR (保险费率0%)' : `CFR / (1-1.1×${premiumRaw}%)`} = ${cifCNY.toFixed(2)} CNY` : null },
+                cip: { usd: toUSD(cipCNY), cny: cipCNY, desc: !isNaN(cipCNY) ? `CIP总价 = ${premiumRate === 0 ? 'CPT (保险费率0%)' : `CPT / (1-1.2×${premiumRaw}%)`} = ${cipCNY.toFixed(2)} CNY` : null },
+                dap: { usd: toUSD(dapCNY), cny: dapCNY, desc: !isNaN(dapCNY) ? `DAP总价 = CIF CNY + 部分目的港费${(dest*0.3).toFixed(2)} = ${dapCNY.toFixed(2)} CNY` : null },
+                dpu: { usd: toUSD(dpuCNY), cny: dpuCNY, desc: !isNaN(dpuCNY) ? `DPU总价 = DAP CNY + 卸货费${(50*exchangeRate).toFixed(2)} = ${dpuCNY.toFixed(2)} CNY` : null },
+                ddp: { usd: toUSD(ddpCNY), cny: ddpCNY, desc: !isNaN(ddpCNY) ? `DDP总价 = DAP CNY + 目的港税费${dest} = ${ddpCNY.toFixed(2)} CNY` : null }
+            };
+        }
+        
+        function setCardPrice(priceDiv, values, descDiv) {
+            const usdSpan = priceDiv.querySelector('.usd-price');
+            const cnySpan = priceDiv.querySelector('.cny-price');
+            if (!usdSpan || !cnySpan) return;
+            const valid = !isNaN(values.usd) && !isNaN(values.cny);
+            if (!valid) {
+                usdSpan.innerHTML = '- <small>USD</small>';
+                cnySpan.innerHTML = '- <small>CNY</small>';
+                priceDiv.classList.add('na');
+                descDiv.innerHTML = `<i class="fas fa-ban"></i> 缺少必要参数，无法计算`;
+            } else {
+                usdSpan.innerHTML = values.usd.toFixed(2) + ' <small>USD</small>';
+                cnySpan.innerHTML = values.cny.toFixed(2) + ' <small>CNY</small>';
+                priceDiv.classList.remove('na');
+                descDiv.innerHTML = `<i class="fas fa-chart-line"></i> ${values.desc || '计算完成'}`;
+            }
+        }
+        
+        function updateDisplay(recordHistory = false) {
+            const effective = getEffectiveRate();
+            if (!effective) {
+                resetCards('请填写有效的USD/CNY汇率');
+                updateRateDisplay();
+                return;
+            }
+            const rate = effective.rate;
+            const comp = computeAllWithRate(rate);
+            if (!comp) {
+                resetCards('缺少核心参数 (成本总价和利润率必须填写)');
+                updateRateDisplay();
+                showError('成本总价和利润率必须填写有效数字');
+                return;
+            }
+            hideError();
+            
+            setCardPrice(priceElements.FOB, comp.fob, priceElements.descFOB);
+            setCardPrice(priceElements.CFR, comp.cfr, priceElements.descCFR);
+            setCardPrice(priceElements.CIF, comp.cif, priceElements.descCIF);
+            setCardPrice(priceElements.EXW, comp.exw, priceElements.descEXW);
+            setCardPrice(priceElements.FCA, comp.fca, priceElements.descFCA);
+            setCardPrice(priceElements.CPT, comp.cpt, priceElements.descCPT);
+            setCardPrice(priceElements.CIP, comp.cip, priceElements.descCIP);
+            setCardPrice(priceElements.DAP, comp.dap, priceElements.descDAP);
+            setCardPrice(priceElements.DPU, comp.dpu, priceElements.descDPU);
+            setCardPrice(priceElements.DDP, comp.ddp, priceElements.descDDP);
+            setCardPrice(priceElements.FAS, comp.fas, priceElements.descFAS);
+            
+            if (recordHistory && !isNaN(comp.fob.usd) && isFinite(comp.fob.usd)) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+                const params = {
+                    cost: getNumericInput(costInp),
+                    domestic: getNumericInput(domesticInp),
+                    freight: getNumericInput(freightInp),
+                    dest: getNumericInput(destInp),
+                    premium: getNumericInput(premiumInp),
+                    profit: getNumericInput(profitInp)
+                };
+                historyItems.unshift({ timestamp: timeStr, params, fob: comp.fob.usd });
+                if (historyItems.length > 12) historyItems.pop();
+                renderHistory();
+            }
+            updateRateDisplay();
+        }
+        
+        function renderHistory() {
+            if (!historyItems.length) { historyListDiv.innerHTML = '<div style="color:#7f9eb5; text-align:center;">暂无报价记录</div>'; return; }
+            let html = '';
+            historyItems.forEach((item, idx) => {
+                html += `<div class="history-item" data-index="${idx}"><span>💰 FOB ${item.fob.toFixed(2)} USD</span><span style="font-size:0.7rem;">${item.timestamp}</span></div>`;
+            });
+            historyListDiv.innerHTML = html;
+        }
+        
+        function fillHistory(index) {
+            const item = historyItems[index];
+            if (!item) return;
+            const set = (inp, val) => { inp.value = isNaN(val) ? '' : val; };
+            set(costInp, item.params.cost);
+            set(domesticInp, item.params.domestic);
+            set(freightInp, item.params.freight);
+            set(destInp, item.params.dest);
+            set(premiumInp, item.params.premium);
+            set(profitInp, item.params.profit);
+            updateDisplay(false);
+        }
+        
+        function clearAllInputs() {
+            costInp.value = ''; domesticInp.value = ''; freightInp.value = ''; destInp.value = ''; premiumInp.value = ''; profitInp.value = '';
+            hideError();
+            updateDisplay(false);
+        }
+        
+        // 事件绑定
+        queryBtn.addEventListener('click', () => updateDisplay(true));
+        clearBtn.addEventListener('click', clearAllInputs);
+        clearHistoryBtn.addEventListener('click', () => { historyItems = []; renderHistory(); });
+        historyListDiv.addEventListener('click', (e) => {
+            const hist = e.target.closest('.history-item');
+            if (hist && hist.dataset.index !== undefined) fillHistory(parseInt(hist.dataset.index));
+        });
+        manualRateInput.addEventListener('input', () => { updateDisplay(false); });
+        [costInp, domesticInp, freightInp, destInp, premiumInp, profitInp].forEach(inp => inp.addEventListener('input', () => { hideError(); updateDisplay(false); }));
+        
+        // 初始化
+        updateDisplay(false);
+    })();
+</script>
+</body>
+</html>
